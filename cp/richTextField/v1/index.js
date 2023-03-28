@@ -443,11 +443,11 @@ function validate(forceUpdate) {
 }
 
 function getSize() {
-  if (quill.getText() === "\n") {
-    return 0;
-  }
   const contents = quill.getContents();
   const html = getHTMLFromContents(contents);
+  if (html === "<div><br></div>"){
+    return 0;
+  }
   return html.length;
 }
 
