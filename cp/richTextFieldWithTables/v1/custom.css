@@ -159,6 +159,25 @@ table {
   display: block;
 }
 
+
+a:focus {
+  /* outline: auto 5px Highlight; /* for non-webkit browsers */
+  /* outline: auto 5px -webkit-focus-ring-color; */
+  outline: 0.5rem solid #25aa00 !important;
+  border-radius: 5px !important; /* for webkit browsers */
+}
+
+button:focus {
+  /* outline: auto 5px Highlight; /* for non-webkit browsers */
+  /* outline: auto 5px -webkit-focus-ring-color; */
+  outline: 0.5rem solid rgb(255, 0, 225) !important;
+  border-radius: 5px !important; /* for webkit browsers */
+}
+
+input:focus {
+  border-color: red !important;
+  outline: red !important;
+}
 /* Print styles */
 /* @media print {
   #quill-toolbar,
