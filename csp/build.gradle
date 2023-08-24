@@ -121,7 +121,7 @@ jar {
 }
 
 tasks.withType(JavaCompile) {
-  options.release = 17
+  options.release = 8
 }
 
 version = new groovy.xml.XmlSlurper().parse(file('src/main/resources/appian-plugin.xml')).'plugin-info'.version
