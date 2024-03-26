@@ -35,13 +35,15 @@ summernote.on("summernote.focus", function () {
   window.hasFocus = true;
 });
 summernote.on(
-  "summernote.change",
-  debounce(function () {
-    // Only run if the editor still has focus
-    if (window.hasFocus) {
-      setAppianValue();
-    }
-  }, 500)
+  "summernote.change", 
+    debounceOnChange(function () {
+      // Only run if the editor still has focus
+      // console.log("saving data");
+      if (window.hasFocus) {
+        setAppianValue();
+      }
+    }, 500)
+
 );
 summernote.on("summernote.paste", function (we, e) {
   e.preventDefault();
@@ -99,6 +101,8 @@ window.hasFocus = false;
 window.currentDisplayParameters = returnDisplayParams();
 window.currentValidations = [];
 window.lastSaveOutValue = "";
+window.lastSaveTime = Date.now()+1000;
+window.lastOnchangeTime = Date.now();
 
 /**
  * Initializes summernote editor and handles all new values passed from Appian SAIL to the component
@@ -308,6 +312,7 @@ function setAppianValue() {
     var newSaveOutValue = cleanHtml(getEditorContents());
     // Always save-out unless the new value we would be saving out matches the last value we saved out
     if (window.lastSaveOutValue !== newSaveOutValue) {
+      window.lastSaveTime = Date.now();
       Appian.Component.saveValue("richText", newSaveOutValue);
       window.lastSaveOutValue = newSaveOutValue;
       // Note, uncomment the following line to debug when richText is saved out
@@ -327,12 +332,32 @@ function setEditorContents() {
     summernote.summernote("code", cleanHtml(window.allParameters.richText));
     summernote.summernote("destroy");
   } else {
+    //console.log("before - last save " + window.lastSaveTime);
+    //console.log("before - last chng " + window.lastOnchangeTime);
     // Otherwise, only update the contents if they've actually changed to avoid triggering the onChange event
     if (
       window.allParameters.richText !== window.lastSaveOutValue &&
       window.allParameters.richText !== getEditorContents()
     ) {
-      summernote.summernote("code", cleanHtml(window.allParameters.richText));
+      // Only update the contents if the last save occurred after the last onChange
+      if (window.lastSaveTime >= (window.lastOnchangeTime + 600)) {
+        //console.log("last save - refreshed " + window.lastSaveTime);
+        //console.log("last chng - refreshed " + window.lastOnchangeTime);
+        summernote.summernote("code", cleanHtml(window.allParameters.richText));
+        //console.log("content refreshed from Appian");
+        
+      } 
+      //else {
+        //console.log("skip content refresh because last save time is less than last onchange time");
+        //console.log("last save " + window.lastSaveTime);
+        //console.log("last chng " + window.lastOnchangeTime);
+      //}
+    } else {
+      // Reset the lastSaveTime
+      window.lastSaveTime = window.lastOnchangeTime + 600;
+      //console.log("skip content refresh because user modified content since last save");
+      //console.log("last save " + window.lastSaveTime);
+      //console.log("last chng " + window.lastOnchangeTime);
     }
   }
 }
@@ -590,6 +615,20 @@ function isInternetExplorer() {
 function debounce(func, delay) {
   var inDebounce;
   return function () {
+    const context = this;
+    const args = arguments;
+    clearTimeout(inDebounce);
+    inDebounce = setTimeout(function () {
+      func.apply(context, args);
+    }, delay);
+  };
+}
+
+function debounceOnChange(func, delay) {
+  var inDebounce;
+  return function () {
+    window.lastOnchangeTime = Date.now();
+    //console.log("onchange");
     const context = this;
     const args = arguments;
     clearTimeout(inDebounce);
