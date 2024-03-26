@@ -38,7 +38,7 @@ summernote.on(
   "summernote.change", 
     debounceOnChange(function () {
       // Only run if the editor still has focus
-      // console.log("saving data");
+      //console.log("saving data");
       if (window.hasFocus) {
         setAppianValue();
       }
@@ -341,17 +341,20 @@ function setEditorContents() {
     ) {
       // Only update the contents if the last save occurred after the last onChange
       if (window.lastSaveTime >= (window.lastOnchangeTime + 600)) {
+        //console.log("content refreshed from Appian");
         //console.log("last save - refreshed " + window.lastSaveTime);
         //console.log("last chng - refreshed " + window.lastOnchangeTime);
         summernote.summernote("code", cleanHtml(window.allParameters.richText));
-        //console.log("content refreshed from Appian");
+        
         
       } 
-      //else {
-        //console.log("skip content refresh because last save time is less than last onchange time");
-        //console.log("last save " + window.lastSaveTime);
-        //console.log("last chng " + window.lastOnchangeTime);
-      //}
+      /*
+      else {
+        console.log("skip content refresh because last save time is less than last onchange time");
+        console.log("last save " + window.lastSaveTime);
+        console.log("last chng " + window.lastOnchangeTime);
+      }
+      */
     } else {
       // Reset the lastSaveTime
       window.lastSaveTime = window.lastOnchangeTime + 600;
