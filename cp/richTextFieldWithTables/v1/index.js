@@ -229,10 +229,10 @@ function buildEditor() {
     if (window.allParameters.insertableItemsLabel.length > 0) {
       toolbar.splice(7, 0, ["insertableItems", ["insertableItems"]]);
     }
-	if (window.allowImages) {
-	  toolbar.find(group => group[0] === "group6")[1].push("picture");
-	  ALLOWED_TAGS.push("img");
-	}
+    if (window.allowImages) {
+      toolbar.find(group => group[0] === "group6")[1].push("picture");
+      ALLOWED_TAGS.push("img");
+    }
 
     summernote.summernote({
       lang: locale,
@@ -269,32 +269,32 @@ function buildEditor() {
         // "h6",
       ],
       fontSizes: ["10", "14", "18", "32"],
-	  callbacks: {
-		onImageUpload: function(files) {
-			Array.from(files).forEach(function(file) {
-				let reader = new FileReader();
-				reader.onload = function(e) {
-					let imgNode = document.createElement("img");
-					imgNode.src = e.target.result;
-					// Insert the image node into Summernote editor
-					$('#summernote').summernote("insertNode", imgNode);
-					if (isImageNewBase64(imgNode)) {
-					  imgNode.classList.add("loading");
-					  uploadBase64Img(imgNode).then(function (source) {
-						console.log("DEBUG RTE - SET ATTRIBUTE");
-					    imgNode.setAttribute("src", source);
-						console.log(imgNode);
-						console.log("DEBUG RTE - REMOVE CLASS LOADING ATTRIBUTE");
-						imgNode.classList.remove("loading");
-						console.log(imgNode);
-					  });
-					}
-				};
-				reader.readAsDataURL(file);  // Process each file
-			});
-		}
-	  }
-	  
+      callbacks: {
+        onImageUpload: function(files) {
+            Array.from(files).forEach(function(file) {
+                let reader = new FileReader();
+                reader.onload = function(e) {
+                    let imgNode = document.createElement("img");
+                    imgNode.src = e.target.result;
+                    // Insert the image node into Summernote editor
+                    $('#summernote').summernote("insertNode", imgNode);
+                    if (isImageNewBase64(imgNode)) {
+                      imgNode.classList.add("loading");
+                      uploadBase64Img(imgNode).then(function (source) {
+                        console.log("DEBUG RTE - SET ATTRIBUTE");
+                        imgNode.setAttribute("src", source);
+                        console.log(imgNode);
+                        console.log("DEBUG RTE - REMOVE CLASS LOADING ATTRIBUTE");
+                        imgNode.classList.remove("loading");
+                        console.log(imgNode);
+                      });
+                    }
+                };
+                reader.readAsDataURL(file);  // Process each file
+            });
+        }
+      }
+      
     });
 
     // Hide the resize bar and status bar, we will handle height automatically based on the input
@@ -428,12 +428,12 @@ function haveDisplayParamsChanged() {
  */
 function setAppianValue() {
   if (!isReadOnly() && validate(false)) {
-	outputUploadedImages();
+    outputUploadedImages();
     var newSaveOutValue = cleanHtml(getEditorContents());
-	  console.log("DEBUG RTE LAST SAVE OUT");
-	  console.log(window.lastSaveOutValue);
-	  console.log("DEBUG RTE NEW SAVE OUT");
-	  console.log(newSaveOutValue);
+      console.log("DEBUG RTE LAST SAVE OUT");
+      console.log(window.lastSaveOutValue);
+      console.log("DEBUG RTE NEW SAVE OUT");
+      console.log(newSaveOutValue);
     // Always save-out unless the new value we would be saving out matches the last value we saved out
     if (window.lastSaveOutValue !== newSaveOutValue) {
       Appian.Component.saveValue("richText", newSaveOutValue);
@@ -581,8 +581,8 @@ function validate(forceUpdate) {
   }
   if (!isReadOnly() && getEditorContents().length > maxSize) {
     newValidations.push(
-		getTranslation("validationContentTooBig")
-	);
+        getTranslation("validationContentTooBig")
+    );
   }
   if (
     forceUpdate ||
