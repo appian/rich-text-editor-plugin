@@ -61,6 +61,7 @@ const ALLOWED_TAGS = [
   "b",
   "strong",
   "i",
+  "img",
   "em",
   "u",
   "strike",
@@ -78,12 +79,15 @@ const ALLOWED_TAGS = [
   "td",
   "a",
 ];
-const ALLOWED_ATTRIBUTES = ["style", "color", "href", "target"];
+const ALLOWED_ATTRIBUTES = ["src", "style", "color", "href", "target"];
 const ALLOWED_STYLE_ATTRIBUTES = [
   "font-size",
   "background-color",
   "text-align",
   "margin-left",
+  "width",
+  "height",
+  "float"
 ];
 const MAX_SIZE_DEFAULT = 10000;
 const DISPLAY_PARAMS = [
@@ -95,19 +99,24 @@ const DISPLAY_PARAMS = [
   "insertableItemsLabel",
   "insertableItems",
 ];
+const CLIENT_API_FRIENDLY_NAME = "ImageStorageClientApi";
 
 window.allParameters;
 window.hasFocus = false;
 window.currentDisplayParameters = returnDisplayParams();
 window.currentValidations = [];
 window.lastSaveOutValue = "";
+window.allowImages = false;
+window.connectedSystem;
+window.uploadedImages = [];
 
 /**
  * Initializes summernote editor and handles all new values passed from Appian SAIL to the component
  */
 Appian.Component.onNewValue(function (allParameters) {
   window.allParameters = allParameters;
-
+  window.connectedSystem = allParameters.imageStorageConnectedSystem;
+  window.allowImages = allParameters.allowImages;
   // First immediately set the contents before even building to avoid triggering onChange events
   setEditorContents();
 
@@ -196,7 +205,6 @@ function buildEditor() {
       ]);
       return event.render();
     };
-
     var toolbar = [
       // [groupName, [list of button]]
       // Note, list of available buttons can be found here: https://summernote.org/deep-dive/#custom-toolbar-popover
@@ -222,6 +230,9 @@ function buildEditor() {
     if (window.allParameters.insertableItemsLabel.length > 0) {
       toolbar.splice(7, 0, ["insertableItems", ["insertableItems"]]);
     }
+	if (window.allowImages) {
+	  toolbar.find(group => group[0] === "group6")[1].push("picture");
+	}
 
     summernote.summernote({
       lang: locale,
@@ -258,6 +269,32 @@ function buildEditor() {
         // "h6",
       ],
       fontSizes: ["10", "14", "18", "32"],
+	  callbacks: {
+		onImageUpload: function(files) {
+			Array.from(files).forEach(function(file) {
+				let reader = new FileReader();
+				reader.onload = function(e) {
+					let imgNode = document.createElement("img");
+					imgNode.src = e.target.result;
+					// Insert the image node into Summernote editor
+					$('#summernote').summernote("insertNode", imgNode);
+					if (isImageNewBase64(imgNode)) {
+					  imgNode.classList.add("loading");
+					  uploadBase64Img(imgNode).then(function (source) {
+						console.log("DEBUG RTE - SET ATTRIBUTE");
+					    imgNode.setAttribute("src", source);
+						console.log(imgNode);
+						console.log("DEBUG RTE - REMOVE CLASS LOADING ATTRIBUTE");
+						imgNode.classList.remove("loading");
+						console.log(imgNode);
+					  });
+					}
+				};
+				reader.readAsDataURL(file);  // Process each file
+			});
+		}
+	  }
+	  
     });
 
     // Hide the resize bar and status bar, we will handle height automatically based on the input
@@ -278,6 +315,80 @@ function buildEditor() {
     // Remove tabindex attribute of buttons so that a user can tab through them (accessibility)
     $("button").removeAttr("tabindex");
   }
+}
+
+/** Returns true if the image is a NEW base64 image
+ *  Checks that its source is base64 & it doesn't have the loading class
+ *  This check returning true means it needs to go through the Connected System & get its source replaced
+ */
+function isImageNewBase64(image) {
+  const base64ImgSrcRegex = /^data:/g;
+  return (
+    base64ImgSrcRegex.test(image.src) && !image.classList.contains("loading")
+  );
+}
+
+function uploadBase64Img(imageSelector) {
+  if (!window.connectedSystem) {
+    return;
+  }
+  let docURL;
+  let docID;
+  let message;
+
+  function handleClientApiResponseForBase64(response) {
+    if (response.payload.error) {
+      console.error("Connected system response: " + response.payload.error);
+      message = getTranslation("validationConnectedSystemResponse");
+      Appian.Component.setValidations(message + response.payload.error);
+      return;
+    }
+
+    docURL = response.payload.docURL;
+    docID = response.payload.docID;
+
+    if (docURL == null) {
+      message = getTranslation("validationDocURLFailure");
+      console.error(message);
+      Appian.Component.setValidations(message);
+      return;
+    } else {
+      // Clear any error messages
+      Appian.Component.setValidations(window.currentValidations);
+      window.uploadedImages.push({ docId: docID, docUrl: docURL });
+      return docURL;
+    }
+  }
+
+  function handleError(response) {
+    if (response.error && response.error[0]) {
+      console.error(response.error);
+      Appian.Component.setValidations([response.error]);
+    } else {
+      message = "An unspecified error occurred";
+      console.error(message);
+      Appian.Component.setValidations([message]);
+    }
+  }
+
+  base64Str = imageSelector.getAttribute("src");
+  if (typeof base64Str !== "string" || base64Str.length < 100) {
+    return base64Str;
+  }
+  const payload = {
+    base64: base64Str,
+  };
+
+  return Appian.Component.invokeClientApi(
+    window.connectedSystem,
+    CLIENT_API_FRIENDLY_NAME,
+    payload
+  )
+    .then(handleClientApiResponseForBase64)
+    .then(function (docURL) {
+      return docURL;
+    })
+    .catch(handleError);
 }
 
 /**
@@ -317,13 +428,36 @@ function haveDisplayParamsChanged() {
  */
 function setAppianValue() {
   if (!isReadOnly() && validate(false)) {
+	outputUploadedImages();
     var newSaveOutValue = cleanHtml(getEditorContents());
+	  console.log("DEBUG RTE LAST SAVE OUT");
+	  console.log(window.lastSaveOutValue);
+	  console.log("DEBUG RTE NEW SAVE OUT");
+	  console.log(newSaveOutValue);
     // Always save-out unless the new value we would be saving out matches the last value we saved out
     if (window.lastSaveOutValue !== newSaveOutValue) {
       Appian.Component.saveValue("richText", newSaveOutValue);
       window.lastSaveOutValue = newSaveOutValue;
     }
   }
+}
+
+/**
+ * Handles the output of the `uploadedImages` parameter on any document upload.
+ */
+function outputUploadedImages() {
+  let uploadedImages = [];
+  window.uploadedImages.forEach(function (docMap) {
+    let uploadedImage = docMap;
+    uploadedImage["wasRemovedFromField"] = !isTextPresent(docMap.docUrl);
+    uploadedImages.push(uploadedImage);
+  });
+  Appian.Component.saveValue("uploadedImages", uploadedImages);
+}
+
+function isTextPresent(text) {
+  const html = summernote.summernote("code");
+  return html.includes(text);
 }
 
 /**
@@ -438,8 +572,17 @@ function isReadOnly() {
 function validate(forceUpdate) {
   var newValidations = [];
   var maxSize = window.allParameters.maxSize || MAX_SIZE_DEFAULT;
+  if (window.allowImages) {
+    if (!window.connectedSystem) {
+      newValidations.push(
+        getTranslation("validationImageStorageConnectedSystemEmpty")
+      );
+    }
+  }
   if (!isReadOnly() && getEditorContents().length > maxSize) {
-    newValidations.push("Content exceeds maximum allowed size");
+    newValidations.push(
+		getTranslation("validationContentTooBig")
+	);
   }
   if (
     forceUpdate ||
