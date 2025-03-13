@@ -61,7 +61,6 @@ const ALLOWED_TAGS = [
   "b",
   "strong",
   "i",
-  "img",
   "em",
   "u",
   "strike",
@@ -232,6 +231,7 @@ function buildEditor() {
     }
 	if (window.allowImages) {
 	  toolbar.find(group => group[0] === "group6")[1].push("picture");
+	  ALLOWED_TAGS.push("img");
 	}
 
     summernote.summernote({
