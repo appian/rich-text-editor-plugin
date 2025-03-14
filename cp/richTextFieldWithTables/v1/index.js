@@ -229,6 +229,9 @@ function buildEditor() {
     if (window.allParameters.insertableItemsLabel.length > 0) {
       toolbar.splice(7, 0, ["insertableItems", ["insertableItems"]]);
     }
+    /* Check to see if images are allowed. If so, then add images to summernote toolbar and 
+     * push <img> html tag to ALLOWED_TAGS list
+     */
     if (window.allowImages) {
       toolbar.find(group => group[0] === "group6")[1].push("picture");
       ALLOWED_TAGS.push("img");
@@ -283,6 +286,10 @@ function buildEditor() {
                       uploadBase64Img(imgNode).then(function (source) {
                         imgNode.setAttribute("src", source);
                         imgNode.classList.remove("loading");
+                        /*On-change does not update img-src after uploading to Appian server
+                         *This will manually trigger the richText value in Appian to update once an image is converted
+                         */
+                        setAppianValue();
                       });
                     }
                 };
@@ -427,7 +434,7 @@ function setAppianValue() {
     outputUploadedImages();
     var newSaveOutValue = cleanHtml(getEditorContents());
     // Always save-out unless the new value we would be saving out matches the last value we saved out
-    if (window.lastSaveOutValue !== newSaveOutValue) {
+    if (window.lastSaveOutValue !== newSaveOutValue && !doesBase64ImageExist()) {
       Appian.Component.saveValue("richText", newSaveOutValue);
       window.lastSaveOutValue = newSaveOutValue;
     }
@@ -445,6 +452,13 @@ function outputUploadedImages() {
     uploadedImages.push(uploadedImage);
   });
   Appian.Component.saveValue("uploadedImages", uploadedImages);
+}
+
+// Returns true if a base64 image exists in the contents
+function doesBase64ImageExist() {
+  const html = summernote.summernote('code');
+  const base64ImgRegex = /\<img src="data:/g;
+  return base64ImgRegex.test(html);
 }
 
 function isTextPresent(text) {
