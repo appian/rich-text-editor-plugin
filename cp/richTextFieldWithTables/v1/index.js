@@ -281,12 +281,8 @@ function buildEditor() {
                     if (isImageNewBase64(imgNode)) {
                       imgNode.classList.add("loading");
                       uploadBase64Img(imgNode).then(function (source) {
-                        console.log("DEBUG RTE - SET ATTRIBUTE");
                         imgNode.setAttribute("src", source);
-                        console.log(imgNode);
-                        console.log("DEBUG RTE - REMOVE CLASS LOADING ATTRIBUTE");
                         imgNode.classList.remove("loading");
-                        console.log(imgNode);
                       });
                     }
                 };
@@ -430,10 +426,6 @@ function setAppianValue() {
   if (!isReadOnly() && validate(false)) {
     outputUploadedImages();
     var newSaveOutValue = cleanHtml(getEditorContents());
-      console.log("DEBUG RTE LAST SAVE OUT");
-      console.log(window.lastSaveOutValue);
-      console.log("DEBUG RTE NEW SAVE OUT");
-      console.log(newSaveOutValue);
     // Always save-out unless the new value we would be saving out matches the last value we saved out
     if (window.lastSaveOutValue !== newSaveOutValue) {
       Appian.Component.saveValue("richText", newSaveOutValue);
