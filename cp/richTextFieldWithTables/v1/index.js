@@ -272,6 +272,7 @@ function buildEditor() {
         // "h6",
       ],
       fontSizes: ["10", "14", "18", "32"],
+      /*Enable callback for image upload to support images in summernote*/
       callbacks: {
         onImageUpload: function(files) {
             Array.from(files).forEach(function(file) {
