@@ -1,4 +1,7 @@
-/* Internationalization Translations */
+/* Internationalization Translations 
+   Only needed for strings that are injected via index.js
+   Otherwise use Summernote's OOTB i18n
+*/
 const english_translations = {
   textHeaderLarge: "Large Header",
   textHeaderMedium: "Medium Header",
