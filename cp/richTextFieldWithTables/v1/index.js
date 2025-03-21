@@ -45,7 +45,14 @@ summernote.on(
 );
 summernote.on("summernote.paste", function (we, e) {
   e.preventDefault();
-  summernote.summernote("pasteHTML", cleanHtml(readClipboard(e), true));
+  /* Determine if clipboard contains an image or not.
+   * If so - skip pasting images as it's handled by onImageUpload.
+   */
+  let clipboardHtml = readClipboard(e);
+  if (clipboardHtml.indexOf("<img") !== -1) {
+    return;
+  }
+  summernote.summernote("pasteHTML", cleanHtml(clipboardHtml, true));
 });
 
 // After investigating, we determined that only these tags & attributes are necessary/supported in order to render all supported styles of the editor
