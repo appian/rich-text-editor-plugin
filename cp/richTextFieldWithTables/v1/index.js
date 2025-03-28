@@ -48,6 +48,7 @@ summernote.on("summernote.paste", function (we, e) {
   /* Determine if clipboard contains an image or not.
    * If so - skip pasting images as it's handled by onImageUpload.
    */
+  handleImagePasteFromFile(e);
   let clipboardHtml = readClipboard(e);
   if (clipboardHtml.indexOf("<img") !== -1) {
     return;
@@ -153,6 +154,8 @@ Appian.Component.onNewValue(function (allParameters) {
   // Always set the Appian value after setting the editor content to pass back out the formatted html (this will only run if the value actually changed)
   setAppianValue();
 });
+
+
 
 /**
  * Creates the summernote editor based on the display parameters
@@ -734,6 +737,42 @@ function readClipboard(e) {
       e.originalEvent.clipboardData.getData("text/html") ||
       e.originalEvent.clipboardData.getData("text/plain")
     );
+  }
+}
+
+function handleImagePasteFromFile(e) {
+  var clipboardData = e.originalEvent.clipboardData;
+  var items = clipboardData.items;
+  var IMAGE_MIME_REGEX = /^image\/(p?jpeg|gif|png)$/i;
+
+  // Loop through clipboard items and check for image types
+  for (var i = 0; i < items.length; i++) {
+    if (items[i].type.match(IMAGE_MIME_REGEX)) {
+      var file = items[i].getAsFile();
+      var reader = new FileReader();
+      reader.onload = function(event) {
+        var img = $('<img>').attr('src', event.target.result);
+        var imgNode = img[0];
+        var range = window.getSelection().getRangeAt(0);
+        range.deleteContents();  // Delete any current selection
+        range.insertNode(imgNode); // Insert the image node
+        // Insert the image node into Summernote editor
+        $('#summernote').summernote("insertNode", imgNode);
+        if (isImageNewBase64(imgNode)) {
+          imgNode.classList.add("loading");
+          uploadBase64Img(imgNode).then(function (source) {
+            imgNode.setAttribute("src", source);
+            imgNode.classList.remove("loading");
+            /*On-change does not update img-src after uploading to Appian server
+             *This will manually trigger the richText value in Appian to update once an image is converted
+             */
+            setAppianValue();
+          });
+        }
+      };
+      reader.readAsDataURL(file);
+      break;
+    }
   }
 }
 
