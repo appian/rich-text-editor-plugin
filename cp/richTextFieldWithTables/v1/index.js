@@ -45,14 +45,14 @@ summernote.on(
 );
 summernote.on("summernote.paste", function (we, e) {
   e.preventDefault();
-  /* Determine if clipboard contains an image or not.
+  /* Determine if clipboard contains an <img> tag.
    * If so - skip pasting images as it's handled by onImageUpload.
    */
-  handleImagePasteFromFile(e);
   let clipboardHtml = readClipboard(e);
   if (clipboardHtml.indexOf("<img") !== -1) {
     return;
   }
+  handleImagePasteFromFile(e);
   summernote.summernote("pasteHTML", cleanHtml(clipboardHtml, true));
 });
 
@@ -86,7 +86,7 @@ const ALLOWED_TAGS = [
   "td",
   "a",
 ];
-const ALLOWED_ATTRIBUTES = ["src", "style", "color", "href", "target"];
+const ALLOWED_ATTRIBUTES = ["src", "style", "color", "href", "target", "colspan", "rowspan"];
 const ALLOWED_STYLE_ATTRIBUTES = [
   "font-size",
   "background-color",
@@ -753,9 +753,6 @@ function handleImagePasteFromFile(e) {
       reader.onload = function(event) {
         var img = $('<img>').attr('src', event.target.result);
         var imgNode = img[0];
-        var range = window.getSelection().getRangeAt(0);
-        range.deleteContents();  // Delete any current selection
-        range.insertNode(imgNode); // Insert the image node
         // Insert the image node into Summernote editor
         $('#summernote').summernote("insertNode", imgNode);
         if (isImageNewBase64(imgNode)) {
