@@ -56,6 +56,7 @@ summernote.on("summernote.paste", function (we, e) {
   summernote.summernote("pasteHTML", cleanHtml(clipboardHtml, true));
 });
 
+
 // After investigating, we determined that only these tags & attributes are necessary/supported in order to render all supported styles of the editor
 const ALLOWED_TAGS = [
   "h1",
@@ -747,7 +748,7 @@ function handleImagePasteFromFile(e) {
 
   // Loop through clipboard items and check for image types
   for (var i = 0; i < items.length; i++) {
-    if (items[i].type.match(IMAGE_MIME_REGEX)) {
+    if (IMAGE_MIME_REGEX.test(items[i].type)) {
       var file = items[i].getAsFile();
       var reader = new FileReader();
       reader.onload = function(event) {
@@ -768,7 +769,6 @@ function handleImagePasteFromFile(e) {
         }
       };
       reader.readAsDataURL(file);
-      break;
     }
   }
 }
