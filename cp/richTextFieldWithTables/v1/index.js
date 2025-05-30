@@ -125,6 +125,10 @@ Appian.Component.onNewValue(function (allParameters) {
   window.allParameters = allParameters;
   window.connectedSystem = allParameters.imageStorageConnectedSystem;
   window.allowImages = allParameters.allowImages;
+  /* If images are allowed, then update ALLOWED_TAGS to include <img> tags */
+  if (window.allowImages) {
+    ALLOWED_TAGS.push("img");
+  }
   // First immediately set the contents before even building to avoid triggering onChange events
   setEditorContents();
 
@@ -240,12 +244,9 @@ function buildEditor() {
     if (window.allParameters.insertableItemsLabel.length > 0) {
       toolbar.splice(7, 0, ["insertableItems", ["insertableItems"]]);
     }
-    /* Check to see if images are allowed. If so, then add images to summernote toolbar and 
-     * push <img> html tag to ALLOWED_TAGS list
-     */
+    /* Check to see if images are allowed. If so, then add images to summernote toolbar */
     if (window.allowImages) {
       toolbar.find(group => group[0] === "group6")[1].push("picture");
-      ALLOWED_TAGS.push("img");
     }
 
     summernote.summernote({
