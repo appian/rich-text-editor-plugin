@@ -91,15 +91,15 @@ h6 {
   font-size: 14px !important;
 }
 .dropdown-item{
-    padding: 3px 20px !important;
+  padding: 3px 20px !important;
 }
 
 .dropdown-item > p{
- margin-bottom: 10px;
+  margin-bottom: 10px;
 }
 .dropdown-menu{
-    font-size:14px !important;
-    padding: 5px 0 !important;
+  font-size:14px !important;
+  padding: 5px 0 !important;
 }
 .note-btn-group .note-btn {
   color:#000;
