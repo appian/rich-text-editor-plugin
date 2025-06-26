@@ -69,6 +69,7 @@ const ALLOWED_TAGS = [
   "h5",
   "h6",
   "p",
+  "div",
   "span",
   "b",
   "strong",
@@ -100,6 +101,7 @@ const ALLOWED_ATTRIBUTES = [
   "rowspan",
 ];
 const ALLOWED_STYLE_ATTRIBUTES = [
+  "color",
   "font-size",
   "background-color",
   "text-align",
@@ -317,17 +319,7 @@ function buildEditor() {
             reader.readAsDataURL(file); // Process each file
           });
         },
-      },
-      // Overrides summernote's default to set links to http:// and instead do https://
-      onCreateLink: function (originalLink) {
-        // Optional: validate or modify the URL
-        if (MAILTO_PATTERN.test(originalLink)) {
-          return "mailto://" + originalLink;
-        } else if (!URL_SCHEME_PATTERN.test(originalLink)) {
-          return "https://" + originalLink;
-        }
-        return originalLink;
-      },
+      }
     });
 
     // Hide the resize bar and status bar, we will handle height automatically based on the input
