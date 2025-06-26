@@ -57,7 +57,7 @@ summernote.on("summernote.paste", function (we, e) {
     return;
   }
   handleImagePasteFromFile(e);
-  summernote.summernote("pasteHTML", cleanHtml(clipboardHtml, true));
+  summernote.summernote("pasteHTML", cleanHtml(clipboardHtml, true, true));
 });
 
 // After investigating, we determined that only these tags & attributes are necessary/supported in order to render all supported styles of the editor
@@ -637,7 +637,7 @@ function validate(forceUpdate) {
  * @param {boolean} isPartialHtml - True if the input should be considered "partial", meaning not the entire editor contents. This is from a paste event.
  * @return {string} Cleaned html string
  */
-function cleanHtml(html, isPartialHtml) {
+function cleanHtml(html, isPartialHtml, isPasteEvent) {
   var out = html;
   isPartialHtml = isPartialHtml || false;
 
@@ -654,6 +654,9 @@ function cleanHtml(html, isPartialHtml) {
     // If the content is HTML, but not from a paste event, just remove carriage returns
   } else if (isContentHtml) {
     out.replace(/\r?\n/g, "");
+    // If the content is not HTML (from an input SAIL  value), but is from a paste event, replace carriage returns with <br> separators
+  } else if (isPasteEvent) {
+    out = out.replace(/\r?\n/g, "<br>");
     // If the content is not HTML (from an input SAIL  value), replace carriage returns with <p> separators
   } else {
     out = "<p>" + out.replace(/\r?\n/g, "</p><p>") + "</p>";
