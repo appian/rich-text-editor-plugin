@@ -45,62 +45,58 @@ summernote.on(
     if (window.hasFocus) {
       setAppianValue();
     }
-  }, 500),
+  }, 500)
 );
 summernote.on("summernote.paste", function (we, e) {
   e.preventDefault();
-  let clipboardHtml = readClipboard(e);
+  let clipboardHtml = readClipboard(e) || "";
 
-  // If clipboard contains an external images (Online Images), let the onImageUpload Callback handle it to avoid duplicate pasting of images
-  const EXTERNAL_WEB_IMAGE_REGEX = /<img[^>]+src=["'](https?:\/\/[^"']+\.(?:jpg|jpeg|png|gif)(?:\?[^"']*)?)["']/i;
-  if (EXTERNAL_WEB_IMAGE_REGEX.test(clipboardHtml)) {
-	return;
+  // If clipboard contains an external image, let the onImageUpload callback handle it to avoid duplicate pasting
+  if (/<img[^>]+src=["']https?:\/\//i.test(clipboardHtml)) {
+    return;
   }
 
   // Clear any newlines present in ordered lists from Word before the DOMParser splits the HTML into nodes and replaces them with <br>
-  if(clipboardHtml.indexOf("mso-list")!==-1){ 
-    const WORD_ORDERED_LIST_REGEX = /<!\[if !supportLists\]>([\s\S]*?)<!\[endif\]>/gi
-    clipboardHtml = clipboardHtml.replace(WORD_ORDERED_LIST_REGEX,function(match, content){
-	  return content.replace(/\r?\n/g,"");
-	});
+  if (clipboardHtml.indexOf("mso-list") !== -1) {
+    var WORD_ORDERED_LIST_REGEX = /<!\[if !supportLists\]>([\s\S]*?)<!\[endif\]>/gi;
+    clipboardHtml = clipboardHtml.replace(WORD_ORDERED_LIST_REGEX, function (match, content) {
+      return content.replace(/\r?\n/g, "");
+    });
   }
-  
+
   // Parse clipboard HTML into a DOM and iterate over top-level nodes
   var parser = new DOMParser();
   var doc = parser.parseFromString(clipboardHtml, "text/html");
   var nodes = doc.body.childNodes;
   var cleanedHtml = "";
 
-  nodes.forEach(function(node) {
+  nodes.forEach(function (node) {
     if (node.nodeType === Node.ELEMENT_NODE) {
-	  var nodeHtml = node.outerHTML;
-	  var cleaned = cleanHtml(nodeHtml, true);
-	  cleaned = stripSummernoteDefaults(cleaned);
-	  cleanedHtml += cleaned;
-	} else if (node.nodeType === Node.TEXT_NODE && node.textContent.trim()) {
-	  cleanedHtml += node.textContent;
-	}
+      var nodeHtml = node.outerHTML;
+      var cleaned = cleanHtml(nodeHtml, true);
+      cleaned = stripSummernoteDefaults(cleaned);
+      cleanedHtml += cleaned;
+    } else if (node.nodeType === Node.TEXT_NODE && node.textContent.trim()) {
+      cleanedHtml += node.textContent;
+    }
   });
-  
+
   // Insert cleaned HTML at cursor position using insertNode to avoid splitting existing content
   var insertParser = new DOMParser();
-  var insertDoc = insertParser.parseFromString(cleanedHtml,"text/html");
-  var insertNodes = Array.from(insertDoc.body.childNodes); 
-  
-  insertNodes.forEach(function(node){ 
+  var insertDoc = insertParser.parseFromString(cleanedHtml, "text/html");
+  var insertNodes = Array.from(insertDoc.body.childNodes);
+
+  insertNodes.forEach(function (node) {
     $("#summernote").summernote("insertNode", node);
   });
-  
+
   // If the last inserted node was a table, add an empty paragraph after it so the cursor is below the table
-  var lastNode = insertNodes[insertNodes.length-1];
-  if(lastNode && lastNode.nodeName.toLowerCase()==="table"){
-    var emptyPara =document.createElement("p"); 
-    emptyPara.innerHTML="<br>"; 
+  var lastNode = insertNodes[insertNodes.length - 1];
+  if (lastNode && lastNode.nodeName.toLowerCase() === "table") {
+    var emptyPara = document.createElement("p");
+    emptyPara.innerHTML = "<br>";
     summernote.summernote("editor.insertNode", emptyPara);
   }
-  
-  // handleImagePasteFromFile(e);
-  // summernote.summernote("pasteHTML", cleanedHtml);
 });
 
 // After investigating, we determined that only these tags & attributes are necessary/supported in order to render all supported styles of the editor
@@ -133,15 +129,7 @@ const ALLOWED_TAGS = [
   "td",
   "a",
 ];
-const ALLOWED_ATTRIBUTES = [
-  "src",
-  "style",
-  "color",
-  "href",
-  "target",
-  "colspan",
-  "rowspan",
-];
+const ALLOWED_ATTRIBUTES = ["src", "style", "color", "href", "target", "colspan", "rowspan"];
 const ALLOWED_STYLE_ATTRIBUTES = [
   "font-size",
   "background-color",
@@ -225,18 +213,14 @@ function buildEditor() {
   if (!isReadOnly()) {
     // 72px is arbitrarily determined based on the height of the toolbar
     var height =
-      window.allParameters.height === "auto"
-        ? "auto"
-        : parseInt(window.allParameters.height) - 72;
+      window.allParameters.height === "auto" ? "auto" : parseInt(window.allParameters.height) - 72;
 
     // Code for the insertable items button
     var insertableItemsFiltered = [];
     if (window.allParameters.insertableItems) {
-      insertableItemsFiltered = window.allParameters.insertableItems.filter(
-        function (i) {
-          return i.label && i.value;
-        },
-      );
+      insertableItemsFiltered = window.allParameters.insertableItems.filter(function (i) {
+        return i.label && i.value;
+      });
     }
     var insertableItemsButton = function (context) {
       var ui = $.summernote.ui;
@@ -276,17 +260,7 @@ function buildEditor() {
       // Note, list of available buttons can be found here: https://summernote.org/deep-dive/#custom-toolbar-popover
       ["group0", ["style"]],
       ["group1", ["fontsize"]],
-      [
-        "group2",
-        [
-          "bold",
-          "italic",
-          "underline",
-          "strikethrough",
-          "superscript",
-          "subscript",
-        ],
-      ],
+      ["group2", ["bold", "italic", "underline", "strikethrough", "superscript", "subscript"]],
       ["group3", ["forecolor", "backcolor"]],
       ["group4", ["ol", "ul"]],
       ["group5", ["paragraph", "table"]],
@@ -401,9 +375,7 @@ function buildEditor() {
  */
 function isImageNewBase64(image) {
   const base64ImgSrcRegex = /^data:/g;
-  return (
-    base64ImgSrcRegex.test(image.src) && !image.classList.contains("loading")
-  );
+  return base64ImgSrcRegex.test(image.src) && !image.classList.contains("loading");
 }
 
 function uploadBase64Img(imageSelector) {
@@ -457,11 +429,7 @@ function uploadBase64Img(imageSelector) {
     base64: base64Str,
   };
 
-  return Appian.Component.invokeClientApi(
-    window.connectedSystem,
-    CLIENT_API_FRIENDLY_NAME,
-    payload,
-  )
+  return Appian.Component.invokeClientApi(window.connectedSystem, CLIENT_API_FRIENDLY_NAME, payload)
     .then(handleClientApiResponseForBase64)
     .then(function (docURL) {
       return docURL;
@@ -477,9 +445,7 @@ function returnDisplayParams() {
   var displayParams = {};
   for (var i = 0; i < DISPLAY_PARAMS.length; i++) {
     var param = DISPLAY_PARAMS[i];
-    displayParams[param] = !window.allParameters
-      ? ""
-      : window.allParameters[param];
+    displayParams[param] = !window.allParameters ? "" : window.allParameters[param];
   }
   return displayParams;
 }
@@ -509,10 +475,7 @@ function setAppianValue() {
     outputUploadedImages();
     var newSaveOutValue = cleanHtml(getEditorContents());
     // Always save-out unless the new value we would be saving out matches the last value we saved out
-    if (
-      window.lastSaveOutValue !== newSaveOutValue &&
-      !doesBase64ImageExist()
-    ) {
+    if (window.lastSaveOutValue !== newSaveOutValue && !doesBase64ImageExist()) {
       Appian.Component.saveValue("richText", newSaveOutValue);
       window.lastSaveOutValue = newSaveOutValue;
     }
@@ -602,18 +565,16 @@ function setDynamicCss() {
     // LIGHT
     tableBorderWidth = "1px 0px";
     cssStyles.push(
-      "table, table tr:last-child, table tr:last-child td {border-bottom: 0px !important}",
+      "table, table tr:last-child, table tr:last-child td {border-bottom: 0px !important}"
     );
     cssStyles.push(
-      "table, th, table tr:first-child, table tr:first-child td {border-top: 0px !important}",
+      "table, th, table tr:first-child, table tr:first-child td {border-top: 0px !important}"
     );
   } else {
     // STANDARD
     tableBorderWidth = "1px";
   }
-  cssStyles.push(
-    "table, td, th, tr {border-width: " + tableBorderWidth + " !important}",
-  );
+  cssStyles.push("table, td, th, tr {border-width: " + tableBorderWidth + " !important}");
 
   // set styles
   styleEl.innerHTML = cssStyles.join("\n");
@@ -658,18 +619,13 @@ function validate(forceUpdate) {
   var maxSize = window.allParameters.maxSize || MAX_SIZE_DEFAULT;
   if (window.allowImages) {
     if (!window.connectedSystem) {
-      newValidations.push(
-        getTranslation("validationImageStorageConnectedSystemEmpty"),
-      );
+      newValidations.push(getTranslation("validationImageStorageConnectedSystemEmpty"));
     }
   }
   if (!isReadOnly() && getEditorContents().length > maxSize) {
     newValidations.push(getTranslation("validationContentTooBig"));
   }
-  if (
-    forceUpdate ||
-    newValidations.toString() !== window.currentValidations.toString()
-  ) {
+  if (forceUpdate || newValidations.toString() !== window.currentValidations.toString()) {
     Appian.Component.setValidations(newValidations);
   }
   window.currentValidations = newValidations;
@@ -699,13 +655,13 @@ function cleanHtml(html, isPartialHtml) {
     out = out
       // Word sometimes uses \r\n to represent a space
       .replace(/\r\n/g, " ")
-	  // Remove newlines from within tag attributes, converting them to spaces so they don't become <br> tags
-	  .replace(/<[^>]+>/g, function(tag) {
-		  return tag.replace(/\n/g, " ");
-	  })
-	  // Remove whitespace between tags
+      // Remove newlines from within tag attributes, converting them to spaces so they don't become <br> tags
+      .replace(/<[^>]+>/g, function (tag) {
+        return tag.replace(/\n/g, " ");
+      })
+      // Remove whitespace between tags
       .replace(/>\s+</g, "><")
-	  // Convert any remaining newlines to <br> tags, these will only be newlines in actual text content at this point
+      // Convert any remaining newlines to <br> tags, these will only be newlines in actual text content at this point
       .replace(/\n/g, "<br>")
       // Remove Word-specific classes
       .replace(/\sclass=["']?MsoNormal["']?/gi, "");
@@ -770,12 +726,9 @@ function cleanHtml(html, isPartialHtml) {
           if ($1 === "style") {
             // Step 4: Remove all unnecessary HTML style attributes
             // Test this Regex here: https://regexr.com/64gqb
-            return $0.replace(
-              /([\w-]+): ?(?:[^;]|&quot;)*?;? ?(?=[^;]*:|")/g,
-              function ($0, $1) {
-                return ALLOWED_STYLE_ATTRIBUTES.indexOf($1) > -1 ? $0 : "";
-              },
-            );
+            return $0.replace(/([\w-]+): ?(?:[^;]|&quot;)*?;? ?(?=[^;]*:|")/g, function ($0, $1) {
+              return ALLOWED_STYLE_ATTRIBUTES.indexOf($1) > -1 ? $0 : "";
+            });
           } else {
             return $0;
           }
@@ -798,9 +751,7 @@ function cleanHtml(html, isPartialHtml) {
   // Test this Regex here: https://regexr.com/64iom
   out = out.replace(/<a.*?href="(.*?)">(.*?)<\/a>/g, function ($0, $1, $2) {
     // Test this Regex here: https://regexr.com/6blub
-    return $1.match(
-      /^(?:[A-Za-z0-9+\-.]+:)?(?:https:\/\/|file:(?:\/\/|\\\\)|mailto:).*$/g,
-    )
+    return $1.match(/^(?:[A-Za-z0-9+\-.]+:)?(?:https:\/\/|file:(?:\/\/|\\\\)|mailto:).*$/g)
       ? $0
       : $2;
   });
@@ -835,10 +786,7 @@ function stripSummernoteDefaults(html) {
   // 1. Clean all style attributes
   out = out.replace(/style="([^"]*)"/g, function (match, styleContent) {
     var cleaned = styleContent
-      .replace(
-        /background-color:\s*rgb\(\s*255\s*,\s*255\s*,\s*255\s*\)\s*;?\s*/gi,
-        "",
-      )
+      .replace(/background-color:\s*rgb\(\s*255\s*,\s*255\s*,\s*255\s*\)\s*;?\s*/gi, "")
       .replace(/font-size:\s*14px\s*;?\s*/gi, "")
       .replace(/text-align:\s*start\s*;?\s*/gi, "")
       .replace(/float:\s*none\s*;?\s*/gi, "")
@@ -858,15 +806,12 @@ function stripSummernoteDefaults(html) {
   out = out.replace(/\s{2,}/g, " ");
 
   // 4. Remove empty spans and unwrap attribute-less spans
-  for (var i = 0; i < 10; i++) {
-    var before = out;
-
+  var before;
+  do {
+    before = out;
     out = out.replace(/<span[^>]*>\s*<\/span>/g, "");
-    out = out.replace(/<span\s*>([^]*?)<\/span>/g, "$1");
-
-    // Break if nothing changed
-    if (before === out) break;
-  }
+    out = out.replace(/<span\s*>([\s\S]*?)<\/span>/g, "$1");
+  } while (before !== out);
 
   // Final cleanup
   out = out.replace(/\s+>/g, ">");
