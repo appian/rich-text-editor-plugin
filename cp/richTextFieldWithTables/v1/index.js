@@ -115,6 +115,8 @@ const ALLOWED_TAGS = [
   "em",
   "u",
   "strike",
+  "ins",
+  "del",
   "sup",
   "sub",
   "font",
@@ -524,6 +526,49 @@ function isTextPresent(text) {
 }
 
 /**
+ * Post-processes the readOnly DOM to replace <ins> and <del> elements with
+ * aria-labeled <span> elements. This prevents VoiceOver from double-reading
+ * the content while still announcing "added:" or "removed:" for screen readers.
+ * Only affects the rendered DOM — the stored richText value is never modified.
+ */
+function makeInsDelAccessible() {
+  var container = document.getElementById("summernote");
+  if (!container) return;
+
+  container.querySelectorAll("ins").forEach(function (el) {
+    var span = document.createElement("span");
+    span.setAttribute("role", "img");
+    span.setAttribute("aria-label", "added: " + escapeAttr(el.textContent));
+    if (el.getAttribute("style")) {
+      span.setAttribute("style", el.getAttribute("style"));
+    }
+    span.innerHTML = el.innerHTML;
+    el.replaceWith(span);
+  });
+
+  container.querySelectorAll("del").forEach(function (el) {
+    var span = document.createElement("span");
+    span.setAttribute("role", "img");
+    span.setAttribute("aria-label", "removed: " + escapeAttr(el.textContent));
+    if (el.getAttribute("style")) {
+      span.setAttribute("style", el.getAttribute("style"));
+    }
+    span.innerHTML = el.innerHTML;
+    el.replaceWith(span);
+  });
+}
+
+/**
+ * Escapes double quotes in a string for safe use in HTML attribute values.
+ * @param {string} str - The string to escape
+ * @return {string} The escaped string
+ */
+function escapeAttr(str) {
+  if (!str) return "";
+  return str.replace(/"/g, "&quot;");
+}
+
+/**
  * Updates the editor content HTML value from the Appian SAIL parameter, only updating if there is a change
  */
 function setEditorContents() {
@@ -532,6 +577,9 @@ function setEditorContents() {
     // Then immediately destroy since setting the contents creates it
     summernote.summernote("code", cleanHtml(window.allParameters.richText));
     summernote.summernote("destroy");
+    // Post-process for accessibility: replace <ins>/<del> with aria-labeled spans
+    // to prevent VoiceOver double-reading while maintaining screen reader announcements
+    makeInsDelAccessible();
   } else {
     // Otherwise, only update the contents if they've actually changed to avoid triggering the onChange event
     if (
