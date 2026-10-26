@@ -365,7 +365,16 @@ const ALLOWED_TAGS = [
   "td",
   "a",
 ];
-const ALLOWED_ATTRIBUTES = ["src", "style", "color", "href", "target", "colspan", "rowspan"];
+const ALLOWED_ATTRIBUTES = [
+  "src",
+  "style",
+  "color",
+  "href",
+  "target",
+  "colspan",
+  "rowspan",
+  "hidden",
+];
 const ALLOWED_STYLE_ATTRIBUTES = [
   "font-size",
   "background-color",

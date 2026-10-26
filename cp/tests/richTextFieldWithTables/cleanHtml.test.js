@@ -189,6 +189,20 @@ describe("cleanHtml", () => {
       );
     });
 
+    test("preserves hidden attribute on span (empty value)", () => {
+      expect(cleanHtml('<span hidden="">text</span>')).toBe('<span hidden="">text</span>');
+    });
+
+    test("preserves bare hidden attribute (no value)", () => {
+      expect(cleanHtml("<span hidden>text</span>")).toBe("<span hidden>text</span>");
+    });
+
+    test("preserves hidden alongside an allowed attribute", () => {
+      expect(cleanHtml('<span hidden="" style="font-size: 18px;">x</span>')).toBe(
+        '<span hidden="" style="font-size: 18px;">x</span>'
+      );
+    });
+
     test("strips class attribute", () => {
       const result = cleanHtml('<p class="fancy">text</p>');
       expect(result).not.toContain("class");
